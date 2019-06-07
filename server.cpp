@@ -1,5 +1,8 @@
 
 #include "server.h"
+#include <iostream>
+#include <unistd.h>
+#include <stdio.h>
 
 using namespace std;
 using namespace web;
@@ -29,39 +32,56 @@ void Server::handle_post(http_request message) {
 	try{
 		request_json = message.extract_json().get();
 	}catch(json::json_exception &e) {
-		std::cout << "message.extrace_json().get() Exception From " << message.remote_address() << ": " <<  e.what()  << endl;
+		std::cout << "message.extrace_json().get() Exception : " <<  e.what()  << endl;
 		response_value["response"] = json::value::string(e.what());
 		message.reply(status_codes::BadRequest, response_value);
 		return;
 	}
 
-	if(request_json.is_null() || request_json.size() > 2) {
-		std::cout << "Received_Json_Value From "<< message.remote_address() << ": "<< request_json << " => Bad Request" << endl;
+	if(request_json.is_null() || request_json.size() > 4) {
+		std::cout << "Received_Json_Value : "<< request_json << " => Bad Request" << endl;
 		message.reply(status_codes::BadRequest, response_value);
 		return;
 	}
 
-	if(request_json.is_object() && request_json.size() == 2) {
-		bool hasHandleId = request_json.has_field("handleId");
-		bool hasResourceId = request_json.has_field("resourceId");
+	if(request_json.is_object() && request_json.size() == 4) {
+		bool hasApplicationId = request_json.has_field("app_type");
+		bool hasResourceId = request_json.has_field("resource_id");
+		bool hasCallerHandleId = request_json.has_field("caller_handle_id");
+		bool hasNewHandleId = request_json.has_field("new_handle_id");
 
-		if(!hasHandleId || !hasResourceId) {
-			std::cout << "Received_Json_Value From "<< message.remote_address() << ": "<< request_json << " => Bad Request" << endl;
+		if(!hasApplicationId || !hasResourceId || !hasCallerHandleId || !hasNewHandleId) {
+			std::cout << "Received_Json_Value From : "<< request_json << " => Bad Request" << endl;
 			message.reply(status_codes::BadRequest, response_value);
 			return;
 		}else {
+			json::value response_success_value;
 			json::value json_value;
-			json_value["resourceId"] = request_json.at("resourceId");
-			json_value["handleId"] = request_json.at("handleId");
-			std::cout << "Received_Json_Value From "<< message.remote_address() << ": "<< json_value << " => successfully received" << endl;
+			json_value["app_type"] = request_json.at("app_type");
+			json_value["resource_id"] = request_json.at("resource_id");
+			json_value["caller_handle_id"] = request_json.at("caller_handle_id");
+			json_value["new_handle_id"] = request_json.at("new_handle_id");
 
+			std::cout << "Received_Json_Value From : "<< json_value << " => successfully received" << endl;
+			std::cout << endl;
+
+			string app_type = request_json.at("app_type").as_string();
+			string resource_id = request_json.at("resource_id").as_string();
+			string caller_handle_id = request_json.at("caller_handle_id").as_string();
+			string new_handle_id = request_json.at("new_handle_id").as_string();
+
+			string shellCmd = "./test_bash.sh "+ app_type +" "+ resource_id + " " + caller_handle_id + " " + new_handle_id;
+			std::cout << "shellCmd : " << shellCmd << endl;
+//			system(shellCmd.c_str());
 			/*
 			 * 여기에 추가
 			 */
-			response_value["response"] = json::value::string("successfully received");
-			message.reply(status_codes::OK, response_value);
+			response_success_value["result"] = json::value::string("successfully received");
+			response_success_value["requestd_value"] = json_value;
+			message.reply(status_codes::OK, response_success_value);
 			return;
 		}
 	} else
 		message.reply(status_codes::BadRequest, response_value);
+
 };

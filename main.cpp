@@ -11,7 +11,7 @@ std::unique_ptr<Server> g_http;
 void on_initialize(const string_t& address) {
 
 	uri_builder uri(address);
-	uri.set_path("load/show");
+	uri.set_path("roadshow/request-join");
 
 	auto addr = uri.to_uri().to_string();
 	//auto addr = uri.m_uri.m_host;
@@ -33,14 +33,9 @@ int main(int argc, char_t * argv[]) {
 //		port = argv[1];
 //	}
 
-	utility::string_t address = U("http://localhost:");
+	utility::string_t address = U("http://192.168.0.8:");
 	address.append(port);
-
 	on_initialize(address);
-	std::cout << "Press Enter to Exit " << std::endl;
-	std::string line;
-	std::getline(std::cin, line);
-
 	on_shutdown();
 	return 0;
 }
